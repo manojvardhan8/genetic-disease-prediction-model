@@ -28,7 +28,7 @@ def load_artifacts(model_dir='models'):
         feature_names = preprocessors['feature_names']
     except FileNotFoundError:
         print("Error: Preprocessing objects not found.")
-        print("Please run 'python3 main_kaggle.py' first to train the model and save artifacts.")
+        print("Please run 'python3 main.py' first to train the model and save artifacts.")
         exit(1)
         
     # Load model
