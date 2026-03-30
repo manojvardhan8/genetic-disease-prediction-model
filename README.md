@@ -1,97 +1,85 @@
+---
+title: Genetic Disease Prediction
+emoji: 🧬
+colorFrom: blue
+colorTo: indigo
+sdk: gradio
+sdk_version: 5.10.0
+python_version: "3.11"
+---
+
 # Genetic Disease Risk Prediction
 
-A deep learning project for predicting genetic disease risk using feature selection on genomic data.
+This project is a machine learning-based tool designed to assess the risk of five common genetic disorders: **Thalassemia**, **Hemophilia**, **Sickle Cell Anemia**, **Breast Cancer**, and **Cystic Fibrosis**. It also includes a "Healthy / Low Risk" category for cases where the model's confidence in all known diseases is low.
 
-## Project Structure
+## 1. Project Overview
 
-```
-├── data/           # Dataset files (download from Kaggle)
-├── models/         # Saved model checkpoints
-├── src/            # Source code modules
-│   ├── kaggle_data_loader.py # Kaggle dataset loader
-│   ├── feature_selection.py # Feature selection methods
-│   ├── model.py             # Deep learning architecture
-│   └── utils.py             # Utility functions
+The core of this project is a **Deep Forward Neural Network (DFNN)** designed for genomic pattern recognition. It features:
+- **High-capacity Model**: Built with Keras/TensorFlow, optimized for multi-class classification.
+- **Preprocessing Pipeline**: Robust data cleaning, feature scaling, and mapping of categorical variables using scikit-learn.
+- **Gradio Web Interface**: An interactive UI (`app.py`) for making real-time predictions.
+- **Feature Selection**: Algorithms to identify the most significant genomic markers (e.g., BRCA1, p53).
 
-├── main_kaggle.py     # Main script (Kaggle dataset)
-├── predict.py         # Inference script
+## 2. Model Architecture & Parameters
 
-├── visualize_dataset.py # EDA visualization script
-└── requirements.txt
-```
+### 🏗️ Network Layers
+The model consists of a multi-layer stack:
+- **Input layer**: Preprocessed medical and genetic markers.
+- **Hidden Layer 1**: 512 neurons (ReLU)
+- **Hidden Layer 2**: 256 neurons (ReLU)
+- **Hidden Layer 3**: 128 neurons (ReLU)
+- **Hidden Layer 4**: 64 neurons (ReLU)
+- **Output layer**: 5 neurons (Softmax) for disease risk probabilities.
 
-## Installation
+### ⚙️ Parameters & Optimization
+- **Activation Functions**: ReLU in hidden layers for efficient learning; Softmax in the final layer for multi-class probability scores.
+- **Overfitting Prevention**:
+    - **Dropout**: Rates of [0.5, 0.4, 0.3, 0.2] are applied to disable random neurons during training.
+    - **L2 Regularization**: A penalty (0.001) is added to large weights for better generalization.
+    - **Normalization**: Batch Normalization after each dense layer to stabilize and speed up learning.
+- **Optimizer**: Adam (learning_rate=0.001), an adaptive learning rate algorithm.
 
+## 3. Usage & Commands
+
+### Local Web App (Recommended)
+To launch the user-friendly Gradio interface:
 ```bash
-pip install -r requirements.txt
+python3 app.py
+```
+This starts a local server at [http://127.0.0.1:7860](http://127.0.0.1:7860).
 
-# For Kaggle download (optional)
-pip install kaggle
+### Training the Base Model
+To train the model from scratch (default settings: 7 epochs):
+```bash
+python3 train.py --epochs 7
 ```
 
-## Dataset
-
-This project uses the **Genetic Disease Prediction Dataset** from Kaggle:
-- **Dataset Link**: [Genetic Disease Prediction](https://www.kaggle.com/datasets/syeddanish5/genetic-disease-prediction-dataset)
-- **Features**: Age, Gender, Hemoglobin Levels, BRCA1 Expression, etc.
-- **Target**: 6 Classes (Healthy, Thalassemia, Hemophilia, etc.)
-
-### Download Dataset
-Automatic download via `kaggle` CLI is supported.
-
-**Manual Setup:**
-1. Install and configure `kaggle` CLI:
-   ```bash
-   pip install kaggle
-   # Setup ~/.kaggle/kaggle.json
-   ```
-2. Or use the command manually:
-   ```bash
-   kaggle datasets download -d syeddanish5/genetic-disease-prediction-dataset -p data/ --unzip
-   ```
-
-## Usage
-
-### With Kaggle Dataset (Recommended)
+### Fine-tuning the Model
+To further improve performance (usually reaching up to 96%+ accuracy):
 ```bash
-
-
-# Train with downloaded Kaggle dataset
-python3 main.py --epochs 50
-
-# With feature selection
-python3 main.py --feature-selection mutual_info --num-features 10
-
-### Making Predictions (Inference)
-Once the model is trained, use `predict.py` to classify new patients:
-
-```bash
-# Interactive mode (enter values manually)
-python3 predict.py --interactive
-
-# Quick test with default sample
-python3 predict.py
+python3 train.py --finetune --epochs 7
 ```
 
-
-
-### Visualization (EDA)
-Generate analysis plots for the dataset:
+### Model Comparison
+To evaluate performance against baseline models (Logistic Regression, Random Forest, Gradient Boosting):
 ```bash
-python3 visualize_dataset.py
+python3 compare_models.py
 ```
 
+## 4. Deployment to Hugging Face Spaces
 
+1. **Create a New Space**: Go to [huggingface.co/spaces](https://huggingface.co/spaces), click **Create new Space**, choose a name, and select **Gradio** as the SDK.
+2. **Select Hardware**: Choose the free CPU tier.
+3. **Upload Files**: Upload `app.py`, `requirements.txt`, and the `models/` directory (containing `.keras` model and `preprocessing.pkl`).
+4. **Automatic Build**: Hugging Face will automatically install dependencies and launch the app.
 
-## Feature Selection Methods
+> [!IMPORTANT]
+> By default, Hugging Face Spaces are **Public**. Anyone with the link can access your tool. You can change this to **Private** under the Settings tab.
 
-- Variance Threshold
-- Chi-Square Test
-- Mutual Information
-- Recursive Feature Elimination (RFE)
-- LASSO (L1 Regularization)
-- Random Forest Feature Importance
+## 5. Technical Details
+- **Input Features**: Age, Gender, Hemoglobin Levels, BRCA1/p53 Expression, Sweat Chloride, etc.
+- **Dataset**: [Genetic Disease Prediction Dataset (Kaggle)](https://www.kaggle.com/datasets/syeddanish5/genetic-disease-prediction-dataset).
+- **Accuracy**: Achieving up to **96.00%** on validation data after fine-tuning.
 
-## Author
-
-Final Year Project - 2026
+---
+*Final Year Project - 2026*

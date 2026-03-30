@@ -49,7 +49,7 @@ def create_disease_prediction_model(input_dim,
     
     # Input layer with batch normalization
     model.add(layers.InputLayer(input_shape=(input_dim,)))
-    model.add(layers.BatchNormalization())
+    model.add(layers.BatchNormalization(axis=-1))
     
     # Hidden layers
     for i, (units, dropout) in enumerate(zip(hidden_layers, dropout_rates)):
@@ -58,7 +58,7 @@ def create_disease_prediction_model(input_dim,
             kernel_regularizer=regularizers.l2(l2_reg),
             name=f'dense_{i+1}'
         ))
-        model.add(layers.BatchNormalization(name=f'bn_{i+1}'))
+        model.add(layers.BatchNormalization(axis=-1, name=f'bn_{i+1}'))
         model.add(layers.Activation('relu', name=f'relu_{i+1}'))
         model.add(layers.Dropout(dropout, name=f'dropout_{i+1}'))
     
@@ -161,18 +161,18 @@ def get_callbacks(model_path='models/best_model.keras',
     """
     callbacks = [
         EarlyStopping(
-            monitor='val_auc',
+            monitor='val_loss',
             patience=patience,
             restore_best_weights=True,
-            mode='max',
+            mode='min',
             min_delta=min_delta,
             verbose=1
         ),
         ModelCheckpoint(
             filepath=model_path,
-            monitor='val_auc',
+            monitor='val_loss',
             save_best_only=True,
-            mode='max',
+            mode='min',
             verbose=1
         ),
         ReduceLROnPlateau(
@@ -180,7 +180,8 @@ def get_callbacks(model_path='models/best_model.keras',
             factor=0.5,
             patience=patience // 3,
             min_lr=1e-7,
-            verbose=1
+            verbose=1,
+            mode='min'
         )
     ]
     
@@ -311,10 +312,32 @@ class GeneticDiseaseModel:
         self.model.save(filepath)
         print(f"Model saved to {filepath}")
     
-    def load(self, filepath):
-        """Load a saved model."""
-        self.model = keras.models.load_model(filepath)
-        print(f"Model loaded from {filepath}")
+    def load(self, filepath, recompile=True):
+        """
+        Load a saved model.
+        
+        Parameters:
+        -----------
+        filepath : str
+            Path to the saved model file
+        recompile : bool
+            Whether to re-compile the model (required for training stability on M1/M2)
+        """
+        # Load without compilation to avoid optimizer version conflicts and graph inconsistencies
+        self.model = keras.models.load_model(filepath, compile=False)
+        
+        if recompile:
+            # Re-compile to reset the optimizer state and ensure the graph is clean for fine-tuning.
+            # We use legacy Adam for Apple Silicon performance.
+            optimizer = keras.optimizers.legacy.Adam(learning_rate=self.learning_rate)
+            self.model.compile(
+                optimizer=optimizer,
+                loss='sparse_categorical_crossentropy',
+                metrics=['accuracy']
+            )
+            print(f"Model loaded and RECOMPILED from {filepath}")
+        else:
+            print(f"Model loaded (Inference Only) from {filepath}")
     
     def get_model(self):
         """Return the underlying Keras model."""
